@@ -14,12 +14,10 @@ Put decryptor.pyd module to the Python modules directory
 
 # Usage
 
+```
 import decryptor
-
 game = "C:/Game/Game.rgss2a"
-
 out_dir = "C:/games"
-
 files = decryptor.ReadRGSSADV1(sPath = game, iKey = 0xdeadcafe, max_count = -1)
-
 [i.extract(game, out_dir) for i in files]
+```
