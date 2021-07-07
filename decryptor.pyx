@@ -250,7 +250,7 @@ cpdef public object ReadRGSSADV1(char *sPath, unsigned int iKey, int max_count):
 	# return array.array("B", bNameDec[:length]).tostring()
 	
 cdef object DecryptNameV3(bytes bNameEnc, unsigned int length, unsigned int key):
-	cdef char bNameDec[255];
+	cdef unsigned char bNameDec[255];
 	cdef char b;
 	cdef int j = 0;
 	cdef int i = 0;
@@ -260,11 +260,7 @@ cdef object DecryptNameV3(bytes bNameEnc, unsigned int length, unsigned int key)
 		if (j == 4):
 			j = 0
 		#print("b = %d, key_byte = %d" % (b, keyBytes[j]))
-		try:
-			bNameDec[i] = ((b & 0xff) ^ keyBytes[j])
-		except OverflowError:
-			print("b = %d, key_byte = %d, res = %d" % (b, keyBytes[j], ((b & 0xff) ^ keyBytes[j])))
-			raise
+		bNameDec[i] = ((b & 0xff) ^ keyBytes[j])
 		j += 1
 		i += 1
 
