@@ -15,6 +15,7 @@ cdef unsigned int iKey = 0xdeadcafe
 iKey_iter_current = 0
 
 cdef inline void debug_print(str s):
+	__func__ = sys._getframe().f_back.f_code.co_name
 	IF DEBUG:
 		print("%s: %s" %(__func__, s))
 
@@ -220,6 +221,109 @@ cpdef public object ReadRGSSADV1(char *sPath, unsigned int iKey, int max_count):
 				break
 		return files
 		
+# def DecryptNameV3(bNameEnc, key):
+	# bNameDec = [];
+	# keyBytes = struct.pack("i", key)
+	# j = 0
+
+	# for b in bNameEnc:
+		# if (j == 4):
+			# j = 0
+		# bNameDec.append(ord(b) ^ ord(keyBytes[j]))
+		# j += 1
+
+	# return array.array("B", bNameDec).tostring()
+	
+# cdef object DecryptNameV3(bytes bNameEnc, unsigned int length, unsigned int key):
+	# cdef char bNameDec[255];
+	# cdef char b;
+	# cdef int j = 0;
+	# cdef int i = 0;
+
+	# for b in bNameEnc:
+		# if (j == 4):
+			# j = 0
+		# bNameDec[i] = b ^ ((key >> 8 * (4 - j)) & 0xff)
+		# j += 1
+		# i += 0
+
+	# return array.array("B", bNameDec[:length]).tostring()
+	
+cdef object DecryptNameV3(bytes bNameEnc, unsigned int length, unsigned int key):
+	cdef char bNameDec[255];
+	cdef char b;
+	cdef int j = 0;
+	cdef int i = 0;
+	keyBytes = struct.pack("i", key)
+
+	for b in bNameEnc:
+		if (j == 4):
+			j = 0
+		#print("b = %d, key_byte = %d" % (b, keyBytes[j]))
+		try:
+			bNameDec[i] = ((b & 0xff) ^ keyBytes[j])
+		except OverflowError:
+			print("b = %d, key_byte = %d, res = %d" % (b, keyBytes[j], ((b & 0xff) ^ keyBytes[j])))
+			raise
+		j += 1
+		i += 1
+
+	return array.array("B", bNameDec[:length]).tostring()
+
+cdef unsigned int keyV3 = 0
+
+cpdef public object ReadRGSSADV3(char *sPath, int max_count):
+	"Returns a list of File objects, inner files in RGSSAD3 file"
+	cdef object file_name;
+	cdef int pos;
+	files = []
+	s = ""
+	cdef unsigned intlength = 0
+	cdef int numFiles = 0
+	
+	if max_count < 0: max_count = INT_MAX
+
+	with BinaryReader(sPath) as br:
+		br.seek(8, 1)
+		
+		iKey = br.read("int32") * 9 + 3
+
+		while (max_count >= numFiles):
+			if (numFiles % 100) == 0: print(numFiles)
+	
+			file_offset = br.read("int32")
+			file_offset = DecryptIntV3(file_offset, iKey)
+
+			file_size = br.read("int32")
+			file_size = DecryptIntV3(file_size, iKey)
+			
+			file_key = br.read("int32")
+			file_key = DecryptIntV3(file_key, iKey)
+			
+			length = br.read("int32")
+			pos = br.tell()
+			#print("length unenc=%d pos = %d" % (length, pos))
+			length = DecryptIntV3(length, iKey)
+			
+			#debug_print("iKey = 0x%x, pos=%d, length=%d" % (iKey, pos, length))
+
+			assert(length < 256)
+			file_name = br.readBytes(length)
+			#print(file_name)
+			file_name = DecryptNameV3(file_name, length, iKey)
+			print(file_name)
+			#break
+			#debug_print(s + str((length, file_name[:length])))
+
+			'''files.append(File(file_name, file_size, file_offset, iKey))
+			br.seek(file_size, os.SEEK_CUR)
+			numFiles += 1
+			if br.tell() >= os.fstat(br.file.fileno()).st_size:
+				debug_print(" - end of file, last file_size = %d" % file_size)
+				break'''
+			numFiles += 1
+		return files
+		
 cpdef decrypt_name(char *sPath, unsigned int iKey, unsigned int pos, unsigned int length):
 	with BinaryReader(sPath) as br:
 		br.seek(pos, 1)
@@ -227,6 +331,12 @@ cpdef decrypt_name(char *sPath, unsigned int iKey, unsigned int pos, unsigned in
 		print(DecryptNameV1(br.readBytes(length), length,  &iKey, pos))
 	
 cpdef public inline unsigned int DecryptIntV1(unsigned int value, iKey):
+	res = value ^ iKey
+	
+	return res
+	
+	
+cpdef public inline unsigned int DecryptIntV3(unsigned int value, iKey):
 	res = value ^ iKey
 	
 	return res
