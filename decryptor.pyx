@@ -282,21 +282,24 @@ cpdef public object ReadRGSSADV3(char *sPath, int max_count):
 	with BinaryReader(sPath) as br:
 		br.seek(8, 1)
 		
-		iKey = br.read("int32") * 9 + 3
+		iKey = br.read("uint32") * 9 + 3
 
 		while (max_count >= numFiles):
 			if (numFiles % 100) == 0: print(numFiles)
 	
-			file_offset = br.read("int32")
+			file_offset = br.read("uint32")
 			file_offset = DecryptIntV3(file_offset, iKey)
+			
+			if (file_offset == 0):
+				break
 
-			file_size = br.read("int32")
+			file_size = br.read("uint32")
 			file_size = DecryptIntV3(file_size, iKey)
 			
-			file_key = br.read("int32")
+			file_key = br.read("uint32")
 			file_key = DecryptIntV3(file_key, iKey)
 			
-			length = br.read("int32")
+			length = br.read("uint32")
 			pos = br.tell()
 			#print("length unenc=%d pos = %d" % (length, pos))
 			length = DecryptIntV3(length, iKey)
@@ -307,9 +310,10 @@ cpdef public object ReadRGSSADV3(char *sPath, int max_count):
 			file_name = br.readBytes(length)
 			#print(file_name)
 			file_name = DecryptNameV3(file_name, length, iKey)
-			print(file_name)
+			#print(file_name)
 			#break
 			#debug_print(s + str((length, file_name[:length])))
+			files.append(File(file_name, file_size, file_offset, file_key))
 
 			'''files.append(File(file_name, file_size, file_offset, iKey))
 			br.seek(file_size, os.SEEK_CUR)
