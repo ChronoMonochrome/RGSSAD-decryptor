@@ -127,21 +127,20 @@ class File:
 		
 		return fDecrypt
 
-	def extract(self, sRGSSFilePath, targetDir):
+	def extract(self, sRGSSFilePath, targetDir, suppress_output = False):
 		"Extract a given file from the given RGSSAD file (sRGSSFilePath) to targetDir"
 		
-		try:
-			basedir = os.path.join(targetDir, os.path.split(self.path)[0])
-			if not os.path.exists(basedir):
-				os.makedirs(basedir)
-		except:
-			pass
+		basedir = os.path.join(targetDir, os.path.split(self.path)[0])
+		if not os.path.exists(basedir):
+			os.makedirs(basedir)
 
-		f = open(os.path.join(targetDir, self.path), "wb")
-		try:
-			filedata = self.DecryptFileData(sRGSSFilePath)
+		if not suppress_output:
+			f = open(os.path.join(targetDir, self.path), "wb")
+
+		filedata = self.DecryptFileData(sRGSSFilePath)
+
+		if not suppress_output:
 			f.write(bytes(filedata))
-		finally:
 			f.close()
 		
 def getBytes_reverse(iValue):
