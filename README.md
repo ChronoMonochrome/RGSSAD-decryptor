@@ -3,7 +3,10 @@ RPG Maker VX ace games decryptor - loosely based on the RGSSAD-RGSS2A-RGSS3A Dec
 
 # Build
 
+```
+pip install -r requirements.txt
 python setup.py build_ext --inplace --compiler=mingw32 -DMS_WIN64=1
+```
 
 # Installation
 
