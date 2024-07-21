@@ -4,6 +4,7 @@ RPG Maker VX ace games decryptor - loosely based on the RGSSAD-RGSS2A-RGSS3A Dec
 # Build
 
 ```
+pip install pybind11
 python setup.py build_ext --inplace
 ```
 
